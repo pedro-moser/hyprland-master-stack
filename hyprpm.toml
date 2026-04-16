@@ -1,0 +1,12 @@
+[repository]
+name = "hyprland-master-monocle"
+authors = ["Pedro"]
+commit_pins = []
+
+[master-monocle]
+description = "Master + monocle stack layout: master on the left, one stack window visible at a time on the right"
+authors = ["Pedro"]
+output = "master-monocle.so"
+build = [
+    "make all",
+]
