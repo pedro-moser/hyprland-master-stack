@@ -1,4 +1,4 @@
-# hyprland-master-monocle
+# hyprland-master-stack
 
 A Hyprland layout plugin that combines a pinned master window on the left with a card-stack of slave windows on the right.
 
@@ -42,7 +42,7 @@ make
 ### Manual
 
 ```bash
-hyprctl plugin load /path/to/master-monocle.so
+hyprctl plugin load /path/to/master-stack.so
 ```
 
 ### hyprpm
@@ -51,7 +51,7 @@ Add to your Hyprland config:
 
 ```ini
 plugin {
-    master-monocle {
+    master-stack {
         mfact = 0.5         # master width ratio (0.05 - 0.95)
         peek_height = 40     # peek strip height in pixels
     }
@@ -64,14 +64,14 @@ Activate the layout:
 
 ```ini
 general {
-    layout = master-monocle
+    layout = master-stack
 }
 ```
 
 Or bind a key to switch to it:
 
 ```ini
-bind = SUPER SHIFT, N, exec, hyprctl keyword general:layout master-monocle
+bind = SUPER SHIFT, N, exec, hyprctl keyword general:layout master-stack
 ```
 
 ### Layout messages

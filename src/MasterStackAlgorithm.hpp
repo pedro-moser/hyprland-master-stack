@@ -7,17 +7,17 @@
 
 namespace Layout::Tiled {
 
-    struct SMasterMonocleNodeData {
-        SMasterMonocleNodeData(SP<ITarget> t, bool master = false) : target(t), isMaster(master) {}
+    struct SMasterStackNodeData {
+        SMasterStackNodeData(SP<ITarget> t, bool master = false) : target(t), isMaster(master) {}
 
         WP<ITarget> target;
         bool        isMaster = false;
     };
 
-    class CMasterMonocleAlgorithm : public ITiledAlgorithm {
+    class CMasterStackAlgorithm : public ITiledAlgorithm {
       public:
-        CMasterMonocleAlgorithm();
-        virtual ~CMasterMonocleAlgorithm();
+        CMasterStackAlgorithm();
+        virtual ~CMasterStackAlgorithm();
 
         virtual void                             newTarget(SP<ITarget> target);
         virtual void                             movedTarget(SP<ITarget> target, std::optional<Vector2D> focalPoint = std::nullopt);
@@ -41,18 +41,18 @@ namespace Layout::Tiled {
         bool                                     isLastStack();
 
       private:
-        std::vector<SP<SMasterMonocleNodeData>> m_nodes;
+        std::vector<SP<SMasterStackNodeData>> m_nodes;
         CHyprSignalListener                     m_focusCallback;
         int                                     m_focusedStackIdx = 0;
         float                                   m_mfact           = 0.5f;
         int                                     m_peekHeight      = 40;
 
-        SP<SMasterMonocleNodeData>              dataFor(SP<ITarget> t);
-        SP<SMasterMonocleNodeData>              getMasterNode();
-        SP<SMasterMonocleNodeData>              getFocusedStackNode();
+        SP<SMasterStackNodeData>              dataFor(SP<ITarget> t);
+        SP<SMasterStackNodeData>              getMasterNode();
+        SP<SMasterStackNodeData>              getFocusedStackNode();
         int                                     getStackCount();
-        int                                     stackIndexOf(SP<SMasterMonocleNodeData> node);
-        void                                    setFocusedToNode(SP<SMasterMonocleNodeData> node);
+        int                                     stackIndexOf(SP<SMasterStackNodeData> node);
+        void                                    setFocusedToNode(SP<SMasterStackNodeData> node);
 
         void                                    focusTargetUpdate(SP<ITarget> target);
         void                                    updateFocus();

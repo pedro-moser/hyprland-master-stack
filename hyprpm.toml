@@ -1,12 +1,12 @@
 [repository]
-name = "hyprland-master-monocle"
+name = "hyprland-master-stack"
 authors = ["Pedro"]
 commit_pins = []
 
-[master-monocle]
-description = "Master + monocle stack layout: master on the left, one stack window visible at a time on the right"
+[master-stack]
+description = "Master + card-stack layout: master pinned on the left, card-stack of slaves on the right with peek strips"
 authors = ["Pedro"]
-output = "master-monocle.so"
+output = "master-stack.so"
 build = [
     "make all",
 ]

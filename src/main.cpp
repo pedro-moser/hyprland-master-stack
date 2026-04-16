@@ -6,7 +6,7 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/managers/KeybindManager.hpp>
 
-#include "MasterMonocleAlgorithm.hpp"
+#include "MasterStackAlgorithm.hpp"
 
 using namespace Layout::Tiled;
 
@@ -14,7 +14,7 @@ HANDLE PHANDLE = nullptr;
 
 static std::function<SDispatchResult(std::string)> g_originalMoveFocus;
 
-static CMasterMonocleAlgorithm* getCurrentAlgo() {
+static CMasterStackAlgorithm* getCurrentAlgo() {
     const auto MON = g_pCompositor->getMonitorFromCursor();
     if (!MON || !MON->m_activeWorkspace)
         return nullptr;
@@ -27,7 +27,7 @@ static CMasterMonocleAlgorithm* getCurrentAlgo() {
     if (!ALGO)
         return nullptr;
 
-    return dynamic_cast<CMasterMonocleAlgorithm*>(ALGO->tiledAlgo().get());
+    return dynamic_cast<CMasterStackAlgorithm*>(ALGO->tiledAlgo().get());
 }
 
 static SDispatchResult hookedMoveFocus(std::string args) {
@@ -53,29 +53,29 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     const std::string CLIENT_HASH = __hyprland_api_get_client_hash();
 
     if (HASH != CLIENT_HASH) {
-        HyprlandAPI::addNotification(PHANDLE, "[master-monocle] Version mismatch! Recompile the plugin.",
+        HyprlandAPI::addNotification(PHANDLE, "[master-stack] Version mismatch! Recompile the plugin.",
             CHyprColor{1.0, 0.2, 0.2, 1.0}, 5000);
-        throw std::runtime_error("[master-monocle] Version mismatch");
+        throw std::runtime_error("[master-stack] Version mismatch");
     }
 
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:master-monocle:mfact", Hyprlang::FLOAT{0.5F});
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:master-monocle:peek_height", Hyprlang::INT{40});
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:master-stack:mfact", Hyprlang::FLOAT{0.5F});
+    HyprlandAPI::addConfigValue(PHANDLE, "plugin:master-stack:peek_height", Hyprlang::INT{40});
 
-    HyprlandAPI::addTiledAlgo(PHANDLE, "master-monocle",
-        &typeid(CMasterMonocleAlgorithm),
-        [] { return makeUnique<CMasterMonocleAlgorithm>(); });
+    HyprlandAPI::addTiledAlgo(PHANDLE, "master-stack",
+        &typeid(CMasterStackAlgorithm),
+        [] { return makeUnique<CMasterStackAlgorithm>(); });
 
     g_originalMoveFocus = g_pKeybindManager->m_dispatchers["movefocus"];
     g_pKeybindManager->m_dispatchers["movefocus"] = hookedMoveFocus;
 
-    HyprlandAPI::addNotification(PHANDLE, "[master-monocle] Loaded successfully!",
+    HyprlandAPI::addNotification(PHANDLE, "[master-stack] Loaded successfully!",
         CHyprColor{0.2, 1.0, 0.2, 1.0}, 3000);
 
-    return {"master-monocle", "Master + card-stack layout", "Pedro", "0.2"};
+    return {"master-stack", "Master + card-stack layout", "Pedro", "0.2"};
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
     if (g_originalMoveFocus)
         g_pKeybindManager->m_dispatchers["movefocus"] = g_originalMoveFocus;
-    HyprlandAPI::removeAlgo(PHANDLE, "master-monocle");
+    HyprlandAPI::removeAlgo(PHANDLE, "master-stack");
 }

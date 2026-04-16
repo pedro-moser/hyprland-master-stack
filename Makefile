@@ -4,8 +4,8 @@ CXXFLAGS += -shared -fPIC -std=c++2b
 
 PKG_CONFIG_DEPS = pixman-1 libdrm hyprland pangocairo libinput libudev wayland-server xkbcommon
 
-SRCS = src/main.cpp src/MasterMonocleAlgorithm.cpp
-OUT = master-monocle.so
+SRCS = src/main.cpp src/MasterStackAlgorithm.cpp
+OUT = master-stack.so
 
 all:
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(SRCS) \

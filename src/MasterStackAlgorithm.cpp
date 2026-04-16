@@ -1,4 +1,4 @@
-#include "MasterMonocleAlgorithm.hpp"
+#include "MasterStackAlgorithm.hpp"
 
 #include <hyprland/src/layout/algorithm/Algorithm.hpp>
 #include <hyprland/src/layout/space/Space.hpp>
@@ -24,12 +24,12 @@ using namespace Layout::Tiled;
 
 // ─── Constructor / Destructor ───────────────────────────────────────────────
 
-CMasterMonocleAlgorithm::CMasterMonocleAlgorithm() {
-    const auto PCFG = HyprlandAPI::getConfigValue(PHANDLE, "plugin:master-monocle:mfact");
+CMasterStackAlgorithm::CMasterStackAlgorithm() {
+    const auto PCFG = HyprlandAPI::getConfigValue(PHANDLE, "plugin:master-stack:mfact");
     if (PCFG)
         m_mfact = std::any_cast<Hyprlang::FLOAT>(PCFG->getValue());
 
-    const auto PPEEK = HyprlandAPI::getConfigValue(PHANDLE, "plugin:master-monocle:peek_height");
+    const auto PPEEK = HyprlandAPI::getConfigValue(PHANDLE, "plugin:master-stack:peek_height");
     if (PPEEK)
         m_peekHeight = std::any_cast<Hyprlang::INT>(PPEEK->getValue());
 
@@ -72,7 +72,7 @@ CMasterMonocleAlgorithm::CMasterMonocleAlgorithm() {
     });
 }
 
-CMasterMonocleAlgorithm::~CMasterMonocleAlgorithm() {
+CMasterStackAlgorithm::~CMasterStackAlgorithm() {
     for (const auto& node : m_nodes) {
         const auto TARGET = node->target.lock();
         if (!TARGET)
@@ -86,7 +86,7 @@ CMasterMonocleAlgorithm::~CMasterMonocleAlgorithm() {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-SP<SMasterMonocleNodeData> CMasterMonocleAlgorithm::dataFor(SP<ITarget> t) {
+SP<SMasterStackNodeData> CMasterStackAlgorithm::dataFor(SP<ITarget> t) {
     for (auto& node : m_nodes) {
         if (node->target.lock() == t)
             return node;
@@ -94,7 +94,7 @@ SP<SMasterMonocleNodeData> CMasterMonocleAlgorithm::dataFor(SP<ITarget> t) {
     return nullptr;
 }
 
-SP<SMasterMonocleNodeData> CMasterMonocleAlgorithm::getMasterNode() {
+SP<SMasterStackNodeData> CMasterStackAlgorithm::getMasterNode() {
     for (auto& node : m_nodes) {
         if (node->isMaster)
             return node;
@@ -102,7 +102,7 @@ SP<SMasterMonocleNodeData> CMasterMonocleAlgorithm::getMasterNode() {
     return nullptr;
 }
 
-SP<SMasterMonocleNodeData> CMasterMonocleAlgorithm::getFocusedStackNode() {
+SP<SMasterStackNodeData> CMasterStackAlgorithm::getFocusedStackNode() {
     int idx = 0;
     for (auto& node : m_nodes) {
         if (node->isMaster)
@@ -114,7 +114,7 @@ SP<SMasterMonocleNodeData> CMasterMonocleAlgorithm::getFocusedStackNode() {
     return nullptr;
 }
 
-int CMasterMonocleAlgorithm::getStackCount() {
+int CMasterStackAlgorithm::getStackCount() {
     int count = 0;
     for (const auto& node : m_nodes) {
         if (!node->isMaster)
@@ -123,7 +123,7 @@ int CMasterMonocleAlgorithm::getStackCount() {
     return count;
 }
 
-int CMasterMonocleAlgorithm::stackIndexOf(SP<SMasterMonocleNodeData> node) {
+int CMasterStackAlgorithm::stackIndexOf(SP<SMasterStackNodeData> node) {
     int idx = 0;
     for (const auto& n : m_nodes) {
         if (n->isMaster)
@@ -135,7 +135,7 @@ int CMasterMonocleAlgorithm::stackIndexOf(SP<SMasterMonocleNodeData> node) {
     return -1;
 }
 
-void CMasterMonocleAlgorithm::setFocusedToNode(SP<SMasterMonocleNodeData> node) {
+void CMasterStackAlgorithm::setFocusedToNode(SP<SMasterStackNodeData> node) {
     const int idx = stackIndexOf(node);
     if (idx >= 0)
         m_focusedStackIdx = idx;
@@ -143,10 +143,10 @@ void CMasterMonocleAlgorithm::setFocusedToNode(SP<SMasterMonocleNodeData> node) 
 
 // ─── Target Management ─────────────────────────────────────────────────────
 
-void CMasterMonocleAlgorithm::newTarget(SP<ITarget> target) {
+void CMasterStackAlgorithm::newTarget(SP<ITarget> target) {
     const bool hasMaster = getMasterNode() != nullptr;
 
-    m_nodes.emplace_back(makeShared<SMasterMonocleNodeData>(target, !hasMaster));
+    m_nodes.emplace_back(makeShared<SMasterStackNodeData>(target, !hasMaster));
 
     if (hasMaster)
         m_focusedStackIdx = getStackCount() - 1;
@@ -154,11 +154,11 @@ void CMasterMonocleAlgorithm::newTarget(SP<ITarget> target) {
     recalculate();
 }
 
-void CMasterMonocleAlgorithm::movedTarget(SP<ITarget> target, std::optional<Vector2D> /*focalPoint*/) {
+void CMasterStackAlgorithm::movedTarget(SP<ITarget> target, std::optional<Vector2D> /*focalPoint*/) {
     newTarget(target);
 }
 
-void CMasterMonocleAlgorithm::removeTarget(SP<ITarget> target) {
+void CMasterStackAlgorithm::removeTarget(SP<ITarget> target) {
     auto it = std::ranges::find_if(m_nodes, [target](const auto& node) { return node->target.lock() == target; });
 
     if (it == m_nodes.end())
@@ -191,7 +191,7 @@ void CMasterMonocleAlgorithm::removeTarget(SP<ITarget> target) {
 
 // ─── Core Layout (Card Stack) ──────────────────────────────────────────────
 
-void CMasterMonocleAlgorithm::recalculate() {
+void CMasterStackAlgorithm::recalculate() {
     if (m_nodes.empty())
         return;
 
@@ -267,7 +267,7 @@ void CMasterMonocleAlgorithm::recalculate() {
     }
 }
 
-void CMasterMonocleAlgorithm::resizeTarget(const Vector2D& delta, SP<ITarget> target, eRectCorner /*corner*/) {
+void CMasterStackAlgorithm::resizeTarget(const Vector2D& delta, SP<ITarget> target, eRectCorner /*corner*/) {
     const auto NODE = dataFor(target);
     if (!NODE)
         return;
@@ -288,7 +288,7 @@ void CMasterMonocleAlgorithm::resizeTarget(const Vector2D& delta, SP<ITarget> ta
 
 // ─── Navigation & Swap ──────────────────────────────────────────────────────
 
-SP<ITarget> CMasterMonocleAlgorithm::getNextCandidate(SP<ITarget> old) {
+SP<ITarget> CMasterStackAlgorithm::getNextCandidate(SP<ITarget> old) {
     if (m_nodes.empty())
         return nullptr;
 
@@ -301,7 +301,7 @@ SP<ITarget> CMasterMonocleAlgorithm::getNextCandidate(SP<ITarget> old) {
     }
 
     // stack window removed: prefer adjacent stack window
-    SP<SMasterMonocleNodeData> prev = nullptr;
+    SP<SMasterStackNodeData> prev = nullptr;
     bool                       foundOld = false;
 
     for (auto& node : m_nodes) {
@@ -323,7 +323,7 @@ SP<ITarget> CMasterMonocleAlgorithm::getNextCandidate(SP<ITarget> old) {
     return MASTER ? MASTER->target.lock() : nullptr;
 }
 
-void CMasterMonocleAlgorithm::swapTargets(SP<ITarget> a, SP<ITarget> b) {
+void CMasterStackAlgorithm::swapTargets(SP<ITarget> a, SP<ITarget> b) {
     auto nodeA = dataFor(a);
     auto nodeB = dataFor(b);
 
@@ -336,7 +336,7 @@ void CMasterMonocleAlgorithm::swapTargets(SP<ITarget> a, SP<ITarget> b) {
     recalculate();
 }
 
-void CMasterMonocleAlgorithm::moveTargetInDirection(SP<ITarget> t, Math::eDirection dir, bool silent) {
+void CMasterStackAlgorithm::moveTargetInDirection(SP<ITarget> t, Math::eDirection dir, bool silent) {
     static auto PMONITORFALLBACK = CConfigValue<Hyprlang::INT>("binds:window_direction_monitor_fallback");
 
     const auto NODE = dataFor(t);
@@ -393,7 +393,7 @@ void CMasterMonocleAlgorithm::moveTargetInDirection(SP<ITarget> t, Math::eDirect
 
 // ─── Layout Messages ────────────────────────────────────────────────────────
 
-std::expected<void, std::string> CMasterMonocleAlgorithm::layoutMsg(const std::string_view& sv) {
+std::expected<void, std::string> CMasterStackAlgorithm::layoutMsg(const std::string_view& sv) {
     CVarList2 vars(std::string{sv}, 0, 's');
 
     if (vars.size() < 1 || vars[0].empty())
@@ -485,10 +485,10 @@ std::expected<void, std::string> CMasterMonocleAlgorithm::layoutMsg(const std::s
         return {};
     }
 
-    return std::unexpected(std::format("Unknown master-monocle layoutmsg: {}", COMMAND));
+    return std::unexpected(std::format("Unknown master-stack layoutmsg: {}", COMMAND));
 }
 
-std::optional<Vector2D> CMasterMonocleAlgorithm::predictSizeForNewTarget() {
+std::optional<Vector2D> CMasterStackAlgorithm::predictSizeForNewTarget() {
     const auto WORK_AREA = m_parent->space()->workArea();
 
     if (m_nodes.empty())
@@ -503,7 +503,7 @@ std::optional<Vector2D> CMasterMonocleAlgorithm::predictSizeForNewTarget() {
 
 // ─── Cycle & Focus ─────────────────────────────────────────────────────────
 
-bool CMasterMonocleAlgorithm::isOnStack() {
+bool CMasterStackAlgorithm::isOnStack() {
     const auto PWINDOW = Desktop::focusState()->window();
     if (!PWINDOW)
         return false;
@@ -511,15 +511,15 @@ bool CMasterMonocleAlgorithm::isOnStack() {
     return NODE && !NODE->isMaster;
 }
 
-bool CMasterMonocleAlgorithm::isFirstStack() {
+bool CMasterStackAlgorithm::isFirstStack() {
     return m_focusedStackIdx <= 0;
 }
 
-bool CMasterMonocleAlgorithm::isLastStack() {
+bool CMasterStackAlgorithm::isLastStack() {
     return m_focusedStackIdx >= getStackCount() - 1;
 }
 
-void CMasterMonocleAlgorithm::cycleNext() {
+void CMasterStackAlgorithm::cycleNext() {
     const int stackCount = getStackCount();
     if (stackCount <= 0)
         return;
@@ -528,7 +528,7 @@ void CMasterMonocleAlgorithm::cycleNext() {
     updateFocus();
 }
 
-void CMasterMonocleAlgorithm::cyclePrev() {
+void CMasterStackAlgorithm::cyclePrev() {
     const int stackCount = getStackCount();
     if (stackCount <= 0)
         return;
@@ -539,7 +539,7 @@ void CMasterMonocleAlgorithm::cyclePrev() {
     updateFocus();
 }
 
-void CMasterMonocleAlgorithm::focusTargetUpdate(SP<ITarget> target) {
+void CMasterStackAlgorithm::focusTargetUpdate(SP<ITarget> target) {
     const auto NODE = dataFor(target);
     if (!NODE || NODE->isMaster)
         return;
@@ -551,7 +551,7 @@ void CMasterMonocleAlgorithm::focusTargetUpdate(SP<ITarget> target) {
     }
 }
 
-void CMasterMonocleAlgorithm::updateFocus() {
+void CMasterStackAlgorithm::updateFocus() {
     recalculate();
 
     const auto STACK = getFocusedStackNode();
