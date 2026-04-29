@@ -36,6 +36,7 @@ namespace Layout::Tiled {
 
         void                                     cycleNext();
         void                                     cyclePrev();
+        void                                     focusMaster();
         bool                                     isOnStack();
         bool                                     isFirstStack();
         bool                                     isLastStack();
@@ -56,5 +57,6 @@ namespace Layout::Tiled {
 
         void                                    focusTargetUpdate(SP<ITarget> target);
         void                                    updateFocus();
+        static void                             switchToTarget(SP<ITarget> target);
     };
 };

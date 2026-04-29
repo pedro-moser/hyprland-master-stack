@@ -1,4 +1,19 @@
+#include <format>
+#include <fstream>
+#include <chrono>
+
 #include <hyprland/src/plugins/PluginAPI.hpp>
+
+void msLog(const std::string& msg) {
+    const auto now = std::chrono::system_clock::now();
+    const auto ms  = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000;
+    const auto t   = std::chrono::system_clock::to_time_t(now);
+    std::tm tm     = *std::localtime(&t);
+    std::ofstream f("/tmp/master-stack.log", std::ios::app);
+    f << std::format("{:02}:{:02}:{:02}.{:03} {}\n", tm.tm_hour, tm.tm_min, tm.tm_sec, (int)ms, msg);
+}
+
+
 #include <hyprland/src/layout/algorithm/TiledAlgorithm.hpp>
 #include <hyprland/src/layout/algorithm/Algorithm.hpp>
 #include <hyprland/src/layout/space/Space.hpp>
@@ -32,12 +47,20 @@ static CMasterStackAlgorithm* getCurrentAlgo() {
 
 static SDispatchResult hookedMoveFocus(std::string args) {
     auto* algo = getCurrentAlgo();
+    const bool onStack = algo && algo->isOnStack();
+    msLog(std::format("HOOK args={} onStack={}", args, onStack));
     if (algo && algo->isOnStack()) {
         // block at boundaries
         if ((args == "u" || args == "k") && algo->isFirstStack())
             return {};
         if ((args == "d" || args == "j") && algo->isLastStack())
             return {};
+        // stack → master: bypass spatial search which can land on a peek
+        // window because peek logicalBoxes share the stack's X column.
+        if (args == "l" || args == "h") {
+            algo->focusMaster();
+            return {};
+        }
     }
     return g_originalMoveFocus(args);
 }

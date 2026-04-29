@@ -1,5 +1,7 @@
 #include "MasterStackAlgorithm.hpp"
 
+extern void msLog(const std::string& msg);
+
 #include <hyprland/src/layout/algorithm/Algorithm.hpp>
 #include <hyprland/src/layout/space/Space.hpp>
 #include <hyprland/src/layout/target/Target.hpp>
@@ -41,10 +43,19 @@ CMasterStackAlgorithm::CMasterStackAlgorithm() {
             return;
 
         const auto TARGET = pWindow->layoutTarget();
-        if (!TARGET)
+        if (!TARGET) {
+            msLog(std::format("CB no-target reason={}", (int)reason));
             return;
+        }
 
         const auto NODE = dataFor(TARGET);
+        msLog(std::format("CB reason={} title=\"{}\" isMaster={} idx={} cur={}",
+            (int)reason,
+            pWindow->m_title.substr(0, 30),
+            NODE ? (NODE->isMaster ? "Y" : "N") : "?",
+            NODE ? stackIndexOf(NODE) : -99,
+            m_focusedStackIdx));
+
         if (!NODE || NODE->isMaster)
             return;
 
@@ -67,6 +78,7 @@ CMasterStackAlgorithm::CMasterStackAlgorithm() {
             return;
         }
 
+        msLog(std::format("CB -> idx change {} -> {}", m_focusedStackIdx, idx));
         m_focusedStackIdx = idx;
         recalculate();
     });
@@ -249,6 +261,8 @@ void CMasterStackAlgorithm::recalculate() {
                     CBox box = {stackX, y, stackW, focusedH};
                     TARGET->setPositionGlobal(box);
                     WINDOW->setHidden(false);
+                    // keep focused stack on top of peek neighbors regardless of focus
+                    g_pCompositor->changeWindowZOrder(WINDOW, true);
                 } else if (stackIdx == m_focusedStackIdx + 1) {
                     // next neighbor: peek at bottom, show bottom of window
                     const double y = stackY + stackH - peekH;
@@ -402,16 +416,6 @@ std::expected<void, std::string> CMasterStackAlgorithm::layoutMsg(const std::str
     const auto COMMAND = vars[0];
     const auto PWINDOW = Desktop::focusState()->window();
 
-    auto switchToWindow = [](SP<ITarget> target) {
-        if (!target)
-            return;
-        const auto WINDOW = target->window();
-        if (!WINDOW || !Desktop::View::validMapped(WINDOW))
-            return;
-        Desktop::focusState()->fullWindowFocus(WINDOW, Desktop::FOCUS_REASON_KEYBIND);
-        g_pCompositor->warpCursorTo(target->position().middle());
-    };
-
     if (COMMAND == "cyclenext") {
         cycleNext();
         return {};
@@ -442,7 +446,7 @@ std::expected<void, std::string> CMasterStackAlgorithm::layoutMsg(const std::str
             recalculate();
 
             const bool focusChild = vars.size() >= 2 && vars[1] == "child";
-            switchToWindow(focusChild ? MASTER->target.lock() : STACK->target.lock());
+            switchToTarget(focusChild ? MASTER->target.lock() : STACK->target.lock());
         } else {
             MASTER->isMaster = false;
             NODE->isMaster   = true;
@@ -451,7 +455,7 @@ std::expected<void, std::string> CMasterStackAlgorithm::layoutMsg(const std::str
             recalculate();
 
             const bool focusChild = vars.size() >= 2 && vars[1] == "child";
-            switchToWindow(focusChild ? MASTER->target.lock() : NODE->target.lock());
+            switchToTarget(focusChild ? MASTER->target.lock() : NODE->target.lock());
         }
 
         return {};
@@ -463,9 +467,9 @@ std::expected<void, std::string> CMasterStackAlgorithm::layoutMsg(const std::str
         if (PWINDOW && PWINDOW->layoutTarget() == MASTER->target.lock()) {
             const auto STACK = getFocusedStackNode();
             if (STACK)
-                switchToWindow(STACK->target.lock());
+                switchToTarget(STACK->target.lock());
         } else {
-            switchToWindow(MASTER->target.lock());
+            switchToTarget(MASTER->target.lock());
         }
 
         return {};
@@ -517,6 +521,23 @@ bool CMasterStackAlgorithm::isFirstStack() {
 
 bool CMasterStackAlgorithm::isLastStack() {
     return m_focusedStackIdx >= getStackCount() - 1;
+}
+
+void CMasterStackAlgorithm::switchToTarget(SP<ITarget> target) {
+    if (!target)
+        return;
+    const auto WINDOW = target->window();
+    if (!WINDOW || !Desktop::View::validMapped(WINDOW))
+        return;
+    Desktop::focusState()->fullWindowFocus(WINDOW, Desktop::FOCUS_REASON_KEYBIND);
+    g_pCompositor->warpCursorTo(target->position().middle());
+}
+
+void CMasterStackAlgorithm::focusMaster() {
+    const auto MASTER = getMasterNode();
+    if (!MASTER)
+        return;
+    switchToTarget(MASTER->target.lock());
 }
 
 void CMasterStackAlgorithm::cycleNext() {
